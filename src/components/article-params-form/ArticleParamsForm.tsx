@@ -3,55 +3,131 @@ import { Button } from 'src/ui/button';
 
 import styles from './ArticleParamsForm.module.scss';
 import clsx from 'clsx';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import {
+	ArticleStateType,
+	backgroundColors,
+	contentWidthArr,
+	defaultArticleState,
+	fontColors,
+	fontFamilyOptions,
+	fontSizeOptions,
+} from 'src/constants/articleProps';
+import { Select } from 'src/ui/select';
+import { Text } from 'src/ui/text';
+import { RadioGroup } from 'src/ui/radio-group';
+import { Separator } from 'src/ui/separator';
+import { useCloseOnOtsideClickOrEsc } from '../hooks/useCloseOnOutsideClickOrEsc';
 
 type TArticleParamsForm = {
-	onSubmit: () => void;
-	onReset: () => void;
-	children?: ReactNode;
+	setCurrentArticleState: React.Dispatch<
+		React.SetStateAction<ArticleStateType>
+	>;
 };
 
 export const ArticleParamsForm = ({
-	onSubmit,
-	onReset,
-	children,
+	setCurrentArticleState,
 }: TArticleParamsForm) => {
-	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const ref = useRef<HTMLElement>(null);
+	const sidebarRef = useRef<HTMLElement>(null);
+	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+	const [selectedFont, setSelectedFont] = useState(
+		defaultArticleState.fontFamilyOption
+	);
+	const [selectedSize, setSelectedSize] = useState(
+		defaultArticleState.fontSizeOption
+	);
+	const [selectedColor, setSelectedColor] = useState(
+		defaultArticleState.fontColor
+	);
+	const [selectedBackgroundColor, setSelectedBackgroundColor] = useState(
+		defaultArticleState.backgroundColor
+	);
+	const [selectedContentWidth, setSelectedContentWidth] = useState(
+		defaultArticleState.contentWidth
+	);
 
-	useEffect(() => {
-		function handleClickOutside(event: Event) {
-			if (ref.current && !ref.current.contains(event.target as Node)) {
-				setIsOpen(false);
-			}
-		}
-		if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [isOpen]);
+	useCloseOnOtsideClickOrEsc({
+		isOpenElement: isSidebarOpen,
+		onClose: () => setIsSidebarOpen(false),
+		elementRef: sidebarRef,
+	});
+
+	function onSubmit(event: React.FormEvent) {
+		event.preventDefault();
+		setCurrentArticleState({
+			fontFamilyOption: selectedFont,
+			backgroundColor: selectedBackgroundColor,
+			contentWidth: selectedContentWidth,
+			fontColor: selectedColor,
+			fontSizeOption: selectedSize,
+		});
+	}
+
+	function onReset(event: React.FormEvent) {
+		event.preventDefault();
+		setSelectedFont(defaultArticleState.fontFamilyOption);
+		setSelectedSize(defaultArticleState.fontSizeOption);
+		setSelectedColor(defaultArticleState.fontColor);
+		setSelectedBackgroundColor(defaultArticleState.backgroundColor);
+		setSelectedContentWidth(defaultArticleState.contentWidth);
+		setCurrentArticleState(defaultArticleState);
+	}
 
 	return (
 		<>
-			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
+			<ArrowButton
+				isOpen={isSidebarOpen}
+				onClick={() => {
+					setIsSidebarOpen(!isSidebarOpen);
+				}}
+			/>
 			<aside
-				ref={ref}
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
-				<form className={styles.form}>
-					{children}
+				ref={sidebarRef}
+				className={clsx(styles.container, {
+					[styles.container_open]: isSidebarOpen,
+				})}>
+				<form
+					className={styles.form}
+					onSubmit={(event) => onSubmit(event)}
+					onReset={(event) => onReset(event)}>
+					<Text as='h2' size={31} weight={800} uppercase>
+						Задайте параметры
+					</Text>
+					<Select
+						selected={selectedFont}
+						onChange={setSelectedFont}
+						options={fontFamilyOptions}
+						title='Шрифт'
+					/>
+					<RadioGroup
+						selected={selectedSize}
+						name='radio'
+						onChange={setSelectedSize}
+						options={fontSizeOptions}
+						title='Размер шрифта'
+					/>
+					<Select
+						selected={selectedColor}
+						onChange={setSelectedColor}
+						options={fontColors}
+						title='Цвет шрифта'
+					/>
+					<Separator />
+					<Select
+						selected={selectedBackgroundColor}
+						onChange={setSelectedBackgroundColor}
+						options={backgroundColors}
+						title='Цвет фона'
+					/>
+					<Select
+						selected={selectedContentWidth}
+						onChange={setSelectedContentWidth}
+						options={contentWidthArr}
+						title='Ширина контента'
+					/>
 					<div className={styles.bottomContainer}>
-						<Button
-							title='Сбросить'
-							htmlType='reset'
-							type='clear'
-							onClick={onReset}
-						/>
-						<Button
-							title='Применить'
-							htmlType='submit'
-							type='apply'
-							onClick={onSubmit}
-						/>
+						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
 			</aside>
